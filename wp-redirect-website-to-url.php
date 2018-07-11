@@ -2,7 +2,7 @@
 namespace Idearia\WP_Redirect_Website_To_Url;
 /*
  * Plugin Name: Redirect Website to URL
- * Version: 1
+ * Version: 0.1
  * Description: Redirect all WordPress pages/posts in the website frontend to a hard-coded URL; uses template_redirect as suggested in https://wordpress.stackexchange.com/a/76807/86662
  * Author: Idearia Srl
  * Author URI: http://www.idearia.it
