@@ -57,23 +57,21 @@ add_action( 'template_redirect', __NAMESPACE__ . '\\wp_redirect_website_to_url' 
 function wp_redirect_website_to_url() {
 
 	/* Debug */
-	DEBUG && error_log( "DENTRO wp_redirect_website_to_url" );
-	DEBUG && error_log( "USER_CAPABILITY = " . USER_CAPABILITY );
-	DEBUG && error_log( "DESTINATION_URL_ID = " . DESTINATION_URL_ID );
-	DEBUG && error_log( "DESTINATION_URL = " . DESTINATION_URL );
-	DEBUG && error_log( "get_post_status(DESTINATION_URL_ID) = " . var_export( get_post_status( DESTINATION_URL_ID ), true ) );
-	DEBUG && error_log( "current_user_can(USER_CAPABILITY) = " . var_export( current_user_can( USER_CAPABILITY ), true ) );
-	DEBUG && error_log( "is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
-	DEBUG && error_log( "is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
+	DEBUG && error_log( "wp_redirect_website_to_url: USER_CAPABILITY = " . USER_CAPABILITY );
+	DEBUG && error_log( "wp_redirect_website_to_url: DESTINATION_URL = " . DESTINATION_URL );
+	DEBUG && error_log( "wp_redirect_website_to_url: current_user_can(USER_CAPABILITY) = " . var_export( current_user_can( USER_CAPABILITY ), true ) );
+	if ( DESTINATION_URL_ID ) {
+		DEBUG && error_log( "wp_redirect_website_to_url: is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
+		DEBUG && error_log( "wp_redirect_website_to_url: is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
+	}
 
+	/* Redirect users based on their capability */
 	if ( empty( USER_CAPABILITY ) || ! current_user_can( USER_CAPABILITY ) ) {
 		if ( ! is_single( DESTINATION_URL_ID ) && ! is_page( DESTINATION_URL_ID ) ) {
+			DEBUG && error_log( "wp_redirect_website_to_url: redirecting user to " . DESTINATION_URL );
 			wp_redirect( esc_url_raw( DESTINATION_URL ), REDIRECT_STATUS_CODE );
 			exit;
 		}
 	}
 
 }
-
-
-
