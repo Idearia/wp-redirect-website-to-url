@@ -17,6 +17,8 @@ namespace Idearia\WP_Redirect_Website_To_Url;
  * @author Idearia Srl
  */
 
+defined( 'ABSPATH' ) or die();
+
 /**
  * Print debug information to debug.log?
  */
