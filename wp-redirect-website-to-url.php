@@ -22,7 +22,7 @@ define( __NAMESPACE__ . "\\DEBUG", false );
 /**
  * Redirection URL
  */
-define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.omai.it/omai-punti-vendita/" );
+define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.google.com" );
 
 /**
  * If the redirection URL is a WordPress page or post, specify here its WordPress ID
