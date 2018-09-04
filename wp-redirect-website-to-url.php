@@ -82,8 +82,7 @@ function wp_redirect_website_to_url() {
 
 	/* Do not redirect users with certain capabilities */
 	if ( ! empty( USER_CAPABILITY ) ) {
-		$redirect = ! current_user_can( USER_CAPABILITY );
-		$redirect = ! is_wp_login();
+		$redirect = ! current_user_can( USER_CAPABILITY ) && ! is_wp_login();
 	}
 
 	/* Redirect the user */
