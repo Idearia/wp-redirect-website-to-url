@@ -28,7 +28,7 @@ namespace Idearia\WP_Redirect_Website_To_Url;
 /**
  * Print debug information to debug.log?
  */
-define( __NAMESPACE__ . "\\DEBUG", false );
+define( __NAMESPACE__ . "\\DEBUG", true );
 
 /**
  * Redirection URL
@@ -41,9 +41,22 @@ define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.omai.it/omai-punti-ven
 define( __NAMESPACE__ . "\\DESTINATION_URL_ID", "32965" );
 
 /**
- * Users with this capability won't be redirected; leave blank to redirect everybody.
+ * Logged-in users with this capability won't be redirected; leave blank to redirect
+ * everybody.
  */
 define( __NAMESPACE__ . "\\USER_CAPABILITY", "manage_options" );
+
+/**
+ * Logged-in users with one of these emails won't be redirected to the lockout URL,
+ * independently from their capabilities; leave blank to redirect everybody.
+ */
+define( __NAMESPACE__ . "\\USER_EMAILS", [] );
+
+/**
+ * Logged-in users with one of these emails won't be redirected to the lockout URL;
+ * after they log-in however they will be redirected to the home page.
+ */
+define( __NAMESPACE__ . "\\PREVIEW_EMAILS", ["site-preview@idearia.it"] );
 
 /**
  * Redirection status: 302 for temporary redirect, 301 for permanent redirect.
@@ -56,6 +69,7 @@ define( __NAMESPACE__ . "\\REDIRECT_STATUS_CODE", "302" );
 // =========
 
 add_action( 'template_redirect', __NAMESPACE__ . '\\wp_redirect_website_to_url' );
+add_filter( 'login_redirect', __NAMESPACE__ . '\\login_redirect', 10, 3 );
 
 
 // ==================
@@ -67,6 +81,8 @@ add_action( 'template_redirect', __NAMESPACE__ . '\\wp_redirect_website_to_url' 
  */
 function wp_redirect_website_to_url() {
 
+	$user = wp_get_current_user();
+
 	/* Debug */
 	DEBUG && error_log( "DENTRO wp_redirect_website_to_url" );
 	DEBUG && error_log( "USER_CAPABILITY = " . USER_CAPABILITY );
@@ -76,13 +92,20 @@ function wp_redirect_website_to_url() {
 	DEBUG && error_log( "current_user_can(USER_CAPABILITY) = " . var_export( current_user_can( USER_CAPABILITY ), true ) );
 	DEBUG && error_log( "is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
 	DEBUG && error_log( "is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
+	DEBUG && error_log( "user_email = " . ( $user->user_email ?? "not set" ) );
 
 	/* By default, redirect everybody and every page */
-	$redirect = false;
+	$redirect = true;
 
 	/* Do not redirect users with certain capabilities */
 	if ( ! empty( USER_CAPABILITY ) ) {
-		$redirect = ! current_user_can( USER_CAPABILITY ) && ! is_wp_login();
+		$redirect = $redirect && ( ! current_user_can( USER_CAPABILITY ) && ! is_wp_login() );
+	}
+
+	/* Do not redirect users with a certain email */
+	if ( ! empty( $user->user_email ) && ( ! empty( USER_EMAILS ) || ! empty( PREVIEW_EMAILS ) ) ) {
+		error_log( "email in list = " . ( in_array( $user->user_email, array_merge( USER_EMAILS, PREVIEW_EMAILS ) ) ? "yes" : "no" ) );
+		$redirect = $redirect && ( ! in_array( $user->user_email, array_merge( USER_EMAILS, PREVIEW_EMAILS ) ) );
 	}
 
 	/* Redirect the user */
@@ -130,5 +153,18 @@ function is_wp_login() {
 	/* Return true if any of these conditions are true */
 	return in_array( true, $conditions, true );
 
+}
+
+
+/**
+ * Redirect preview users to the homepage after login. 
+ */
+function login_redirect( $redirect_to, $request, $user ){
+	if ( ! empty( $user->user_email ) && in_array( $user->user_email, PREVIEW_EMAILS ) ) {
+		return home_url();
+	}
+	else {
+		return $redirect_to;
+	}
 }
 
