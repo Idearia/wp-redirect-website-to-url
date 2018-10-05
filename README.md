@@ -17,23 +17,35 @@ The plugin has a bunch of hard-coded options, that can be changed right in the P
 /**
  * Print debug information to debug.log?
  */
-define( __NAMESPACE__ . "\\DEBUG", false );
+define( __NAMESPACE__ . "\\DEBUG", true );
 
 /**
  * Redirection URL
  */
-define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.google.com" );
+define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.omai.it/omai-punti-vendita/" );
 
 /**
- * If the redirection URL is a WordPress page or post, specify here its WordPress ID;
- * it will be used to prevent an infinite redirect loop.
+ * If the redirection URL is a WordPress page or post, specify here its WordPress ID
  */
-define( __NAMESPACE__ . "\\DESTINATION_URL_ID", "" );
+define( __NAMESPACE__ . "\\DESTINATION_URL_ID", "32965" );
 
 /**
- * Users with this capability won't be redirected; leave blank to redirect everybody.
+ * Logged-in users with this capability won't be redirected; leave blank to redirect
+ * everybody.
  */
 define( __NAMESPACE__ . "\\USER_CAPABILITY", "manage_options" );
+
+/**
+ * Logged-in users with one of these emails won't be redirected to the lockout URL,
+ * independently from their capabilities; leave blank to redirect everybody.
+ */
+define( __NAMESPACE__ . "\\USER_EMAILS", [] );
+
+/**
+ * Logged-in users with one of these emails won't be redirected to the lockout URL;
+ * after they log-in however they will be redirected to the home page.
+ */
+define( __NAMESPACE__ . "\\PREVIEW_EMAILS", ["site-preview@idearia.it"] );
 
 /**
  * Redirection status: 302 for temporary redirect, 301 for permanent redirect.
