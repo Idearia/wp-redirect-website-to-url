@@ -36,7 +36,8 @@ define( __NAMESPACE__ . "\\DEBUG", true );
 define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.omai.it/omai-punti-vendita/" );
 
 /**
- * If the redirection URL is a WordPress page or post, specify here its WordPress ID
+ * If you want to redirect to a WordPress page or post, you must specify here
+ * its WordPress ID; it will be used to prevent infinite redirection.
  */
 define( __NAMESPACE__ . "\\DESTINATION_URL_ID", "32965" );
 
@@ -87,12 +88,14 @@ function wp_redirect_website_to_url() {
 	DEBUG && error_log( "DENTRO wp_redirect_website_to_url" );
 	DEBUG && error_log( "USER_CAPABILITY = " . USER_CAPABILITY );
 	DEBUG && error_log( "DESTINATION_URL_ID = " . DESTINATION_URL_ID );
-	DEBUG && error_log( "DESTINATION_URL = " . DESTINATION_URL );
-	DEBUG && error_log( "get_post_status(DESTINATION_URL_ID) = " . var_export( get_post_status( DESTINATION_URL_ID ), true ) );
+  DEBUG && error_log( "DESTINATION_URL = " . DESTINATION_URL );
 	DEBUG && error_log( "current_user_can(USER_CAPABILITY) = " . var_export( current_user_can( USER_CAPABILITY ), true ) );
-	DEBUG && error_log( "is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
-	DEBUG && error_log( "is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
 	DEBUG && error_log( "user_email = " . ( $user->user_email ?? "not set" ) );
+  if ( DESTINATION_URL_ID ) {
+  	DEBUG && error_log( "get_post_status(DESTINATION_URL_ID) = " . var_export( get_post_status( DESTINATION_URL_ID ), true ) );
+  	DEBUG && error_log( "is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
+    DEBUG && error_log( "is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
+  }
 
 	/* By default, redirect everybody and every page */
 	$redirect = true;
@@ -106,14 +109,18 @@ function wp_redirect_website_to_url() {
 	if ( ! empty( $user->user_email ) && ( ! empty( USER_EMAILS ) || ! empty( PREVIEW_EMAILS ) ) ) {
 		error_log( "email in list = " . ( in_array( $user->user_email, array_merge( USER_EMAILS, PREVIEW_EMAILS ) ) ? "yes" : "no" ) );
 		$redirect = $redirect && ( ! in_array( $user->user_email, array_merge( USER_EMAILS, PREVIEW_EMAILS ) ) );
-	}
+  }
+  
+  /* Prevent infinite redirection if we are already on the redirection URL */
+  if ( DESTINATION_URL_ID && ( is_single( DESTINATION_URL_ID ) || is_page( DESTINATION_URL_ID ) ) ) {
+    $redirect = false;
+    return;
+  }
 
 	/* Redirect the user */
 	if ( $redirect ) {
-		if ( ! is_single( DESTINATION_URL_ID ) && ! is_page( DESTINATION_URL_ID ) ) {
-			wp_redirect( esc_url_raw( DESTINATION_URL ), REDIRECT_STATUS_CODE );
-			exit;
-		}
+		wp_redirect( esc_url_raw( DESTINATION_URL ), REDIRECT_STATUS_CODE );
+		exit;
 	}
 
 }
@@ -167,4 +174,3 @@ function login_redirect( $redirect_to, $request, $user ){
 		return $redirect_to;
 	}
 }
-
