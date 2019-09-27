@@ -28,7 +28,7 @@ namespace Idearia\WP_Redirect_Website_To_Url;
 /**
  * Print debug information to debug.log?
  */
-define( __NAMESPACE__ . "\\DEBUG", true );
+define( __NAMESPACE__ . "\\DEBUG", false );
 
 /**
  * Redirection URL
@@ -60,6 +60,12 @@ define( __NAMESPACE__ . "\\USER_EMAILS", [] );
 define( __NAMESPACE__ . "\\PREVIEW_EMAILS", ["site-preview@idearia.it"] );
 
 /**
+ * Any users with one of these IPs won't be redirected to the lockout URL,
+ * independently from the login status or capabilities.
+ */
+define( __NAMESPACE__ . "\\WHITELIST_IPS", ["93.42.97.22"] );
+
+/**
  * Redirection status: 302 for temporary redirect, 301 for permanent redirect.
  */
 define( __NAMESPACE__ . "\\REDIRECT_STATUS_CODE", "302" );
@@ -88,14 +94,16 @@ function wp_redirect_website_to_url() {
 	DEBUG && error_log( "DENTRO wp_redirect_website_to_url" );
 	DEBUG && error_log( "USER_CAPABILITY = " . USER_CAPABILITY );
 	DEBUG && error_log( "DESTINATION_URL_ID = " . DESTINATION_URL_ID );
-  DEBUG && error_log( "DESTINATION_URL = " . DESTINATION_URL );
+	DEBUG && error_log( "DESTINATION_URL = " . DESTINATION_URL );
 	DEBUG && error_log( "current_user_can(USER_CAPABILITY) = " . var_export( current_user_can( USER_CAPABILITY ), true ) );
 	DEBUG && error_log( "user_email = " . ( $user->user_email ?? "not set" ) );
-  if ( DESTINATION_URL_ID ) {
-  	DEBUG && error_log( "get_post_status(DESTINATION_URL_ID) = " . var_export( get_post_status( DESTINATION_URL_ID ), true ) );
-  	DEBUG && error_log( "is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
-    DEBUG && error_log( "is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
-  }
+	if ( DESTINATION_URL_ID ) {
+		DEBUG && error_log( "get_post_status(DESTINATION_URL_ID) = " . var_export( get_post_status( DESTINATION_URL_ID ), true ) );
+		DEBUG && error_log( "is_single(DESTINATION_URL_ID) = " . var_export( is_single( DESTINATION_URL_ID ), true ) );
+		DEBUG && error_log( "is_page(DESTINATION_URL_ID) = " . var_export( is_page( DESTINATION_URL_ID ), true ) );
+	}
+	DEBUG && error_log( "WHITELIST_IPS = " . var_export( WHITELIST_IPS, true ) );
+	DEBUG && error_log( "user_ip = " . getClientIp() );
 
 	/* By default, redirect everybody and every page */
 	$redirect = true;
@@ -109,13 +117,19 @@ function wp_redirect_website_to_url() {
 	if ( ! empty( $user->user_email ) && ( ! empty( USER_EMAILS ) || ! empty( PREVIEW_EMAILS ) ) ) {
 		error_log( "email in list = " . ( in_array( $user->user_email, array_merge( USER_EMAILS, PREVIEW_EMAILS ) ) ? "yes" : "no" ) );
 		$redirect = $redirect && ( ! in_array( $user->user_email, array_merge( USER_EMAILS, PREVIEW_EMAILS ) ) );
-  }
-  
-  /* Prevent infinite redirection if we are already on the redirection URL */
-  if ( DESTINATION_URL_ID && ( is_single( DESTINATION_URL_ID ) || is_page( DESTINATION_URL_ID ) ) ) {
-    $redirect = false;
-    return;
-  }
+	}
+
+	/* Prevent infinite redirection if we are already on the redirection URL */
+	if ( DESTINATION_URL_ID && ( is_single( DESTINATION_URL_ID ) || is_page( DESTINATION_URL_ID ) ) ) {
+		$redirect = false;
+		return;
+	}
+
+	/* Do not redirect users with these IPs */
+	if ( ! empty( WHITELIST_IPS ) && in_array( getClientIp(), WHITELIST_IPS ) ) {
+		$redirect = false;
+		return;
+	}
 
 	/* Redirect the user */
 	if ( $redirect ) {
@@ -173,4 +187,40 @@ function login_redirect( $redirect_to, $request, $user ){
 	else {
 		return $redirect_to;
 	}
+}
+
+/**
+ * Return the client's IP address.
+ *
+ * The algorithm uses the HTTP_CLIENT_IP and HTTP_X_FORWARDED_FOR
+ * globals to infer the IP address; if they are not available (as
+ * it is the case in most cases), it suse the REMOTE_ADDR global.
+ *
+ * Do not use this function to grant access or privileges to
+ * IP addresses, because the HTTP_CLIENT_IP and
+ * HTTP_X_FORWARDED_FOR globals can be easily spoofed.
+ *
+ * On the other hand, the REMOTE_ADDR global is very difficult
+ * to spoof. However, when the client is beyond a proxy, it isn't
+ * necessarily the correct IP.
+ *
+ * Returns the IP address if found, false if not. The output is
+ * santized via FILTER_VALIDATE_IP.
+ *
+ * See here for more details: http://stackoverflow.com/questions/
+ * 3003145/how-to-get-the-client-ip-address-in-php
+ *
+ * Created by Guido W. Pettinari on 05.09.2016.
+ * Latest version here:
+ * https://gist.github.com/coccoinomane/4c420776dc16d80ea772aff06d3e1ef4
+ */
+function getClientIp() {
+	if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+		$ip = $_SERVER['HTTP_CLIENT_IP'];
+	} elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+		$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+	} else {
+		$ip = $_SERVER['REMOTE_ADDR'];
+	}
+	return filter_var($ip, FILTER_VALIDATE_IP);
 }
