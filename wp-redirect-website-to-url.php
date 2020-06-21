@@ -42,6 +42,11 @@ define( __NAMESPACE__ . "\\DESTINATION_URL", "https://www.omai.it/omai-punti-ven
 define( __NAMESPACE__ . "\\DESTINATION_URL_ID", "32965" );
 
 /**
+ * WordPress IDs of Pages, where no redirection should occur; f.e. imprint or tos
+ */
+define( __NAMESPACE__ . "\\REDIRECTION_ID_BLOCKER", [101, 3, 96, 58] );
+
+/**
  * Logged-in users with this capability won't be redirected; leave blank to redirect
  * everybody.
  */
@@ -121,14 +126,20 @@ function wp_redirect_website_to_url() {
 
 	/* Prevent infinite redirection if we are already on the redirection URL */
 	if ( DESTINATION_URL_ID && ( is_single( DESTINATION_URL_ID ) || is_page( DESTINATION_URL_ID ) ) ) {
-		$redirect = false;
-		return;
+		return; //return w.o. redirect
+	}
+
+	/* Prevent redirection if we are on wp-post that is mandatory */
+	if ( is_array(REDIRECTION_ID_BLOCKER) && sizeof(REDIRECTION_ID_BLOCKER) > 0 ) {
+		foreach(REDIRECTION_ID_BLOCKER as $blocker_id)
+			if( is_single( $blocker_id ) || is_page( $blocker_id ) )
+				return; //return w.o. redirect
+		
 	}
 
 	/* Do not redirect users with these IPs */
 	if ( ! empty( WHITELIST_IPS ) && in_array( getClientIp(), WHITELIST_IPS ) ) {
-		$redirect = false;
-		return;
+		return; //return w.o. redirect
 	}
 
 	/* Redirect the user */
