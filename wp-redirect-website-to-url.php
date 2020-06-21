@@ -43,8 +43,9 @@ define( __NAMESPACE__ . "\\DESTINATION_URL_ID", "32965" );
 
 /**
  * WordPress IDs of Pages, where no redirection should occur; f.e. imprint or tos
+ * Example: [100, 200, 300]
  */
-define( __NAMESPACE__ . "\\REDIRECTION_ID_BLOCKER", [101, 3, 96, 58] );
+define( __NAMESPACE__ . "\\REDIRECTION_ID_BLOCKER", [] );
 
 /**
  * Logged-in users with this capability won't be redirected; leave blank to redirect
